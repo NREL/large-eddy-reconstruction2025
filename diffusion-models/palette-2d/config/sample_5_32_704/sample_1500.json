@@ -1,0 +1,190 @@
+{
+    "name": "sample_1500", // experiments name
+    "wandb_project": "sample_palette2d",
+    "gpu_ids": [0,
+                1,
+                2,
+                3], // gpu ids list, default is single 0
+    "seed" : 2, // random seed, seed <0 represents randomization used 
+    "finetune_norm": false, // find the parameters to optimize
+    "datatype": "2d_numpy", // "image", "2d_numpy", "3d_numpy"
+
+    "path": { //set every part file path
+        "base_dir": "/scratch/orybchuk/wakedynamics/bcs-ldm/palette/sampling", // base path for all log except resume_state
+        "code": "code", // code backup
+        "tb_logger": "tb_logger", // path of tensorboard logger
+        "results": "results",
+        "checkpoint": "checkpoint",
+        // "resume_state": "experiments/train_inpainting_les_220830_150647/checkpoint/100" 
+         "resume_state": "/projects/wakedynamics/orybchuk/bcs-ldm/palette/experiments/overfit_5_32_704/checkpoints/6000" // ex: 100, loading .state  and .pth from given epoch and iteration
+    },
+
+    "datasets": { // train or test
+        "train": { 
+            "which_dataset": {  // import designated dataset using arguments 
+                "name": ["data.dataset", "LidarImg2ImgDataset"], // import Dataset() class / function(not recommend) from data.dataset.py (default is [data.dataset.py])
+                "args":{ // arguments to initialize dataset
+                    "data_root": "XX",
+                    "data_len": -1,
+                    "data_bounds": [
+                        3.214014355133783,
+                        15.289255055189235,
+                        -5.653542266524573,
+                        6.534358873692452,
+                        -4.2332768669062615,
+                        6.379011318431806,
+                        317.8989310331773,
+                        320.45569693188133,
+                        0.0,
+                        0.8424542759164027
+                     ], // [umin, umax, vmin, vmax[, wmin, wmax]]
+                    "image_size": [
+                        704,
+                        32
+                    ]
+                } 
+            },
+            "dataloader":{
+                "validation_split": 32, // percent or number 
+                "args":{ // arguments to initialize train_dataloader
+                    "batch_size": 32, // batch size in each gpu
+                    "num_workers": 4,
+                    "shuffle": true,
+                    "pin_memory": true,
+                    "drop_last": true
+                },
+                "val_args":{ // arguments to initialize valid_dataloader, will overwrite the parameters in train_dataloader
+                    "batch_size": 1, // batch size in each gpu
+                    "num_workers": 4,
+                    "shuffle": false,
+                    "pin_memory": true,
+                    "drop_last": false
+                }
+            }
+        },
+        "test": { 
+            "which_dataset": {
+                "name": "LidarImg2ImgDataset", // import Dataset() class / function(not recommend) from default file
+                "args":{ // arguments to initialize dataset
+                    "data_root": "/projects/wakedynamics/orybchuk/bcs-ldm/advect_interpolate/real/processed_data/qc_240207/processed_locally_with_pandas1/1500/sample.flist",
+                    "data_len": -1,
+                    "data_bounds": [
+                        3.214014355133783,
+                        15.289255055189235,
+                        -5.653542266524573,
+                        6.534358873692452,
+                        -4.2332768669062615,
+                        6.379011318431806,
+                        317.8989310331773,
+                        320.45569693188133,
+                        0.0,
+                        0.8424542759164027
+                    ], // [umin, umax, vmin, vmax[, wmin, wmax]]
+                    "image_size": [
+                        704,
+                        32
+                    ]
+                }
+            },
+            "dataloader":{
+                "args":{
+                    "batch_size": 32,
+                    "num_workers": 4,
+                    "shuffle": false,
+                    "pin_memory": true
+                }
+            }
+        }
+    },
+
+    "model": { // networks/metrics/losses/optimizers/lr_schedulers is a list and model is a dict
+        "which_model": { // import designated  model(trainer) using arguments 
+            "name": ["models.model", "Palette"], // import Model() class / function(not recommend) from models.model.py (default is [models.model.py])
+            "args": {
+                "sample_num": 1, // process of each image
+                "task": "colorization",
+                "ema_scheduler": {
+                    "ema_start": 1,
+                    "ema_iter": 1,
+                    "ema_decay": 0.9999
+                },
+                "optimizers": [
+                    { "lr": 1e-4, "weight_decay": 0}
+                ]
+            }
+        }, 
+        "which_networks": [ // import designated list of networks using arguments
+            {
+                "name": ["models.network", "Network"], // import Network() class / function(not recommend) from default file (default is [models/network.py]) 
+                "args": { // arguments to initialize network
+                    "init_type": "kaiming", // method can be [normal | xavier| xavier_uniform | kaiming | orthogonal], default is kaiming
+                    "module_name": "guided_diffusion", // sr3 | guided_diffusion
+                    "unet": {
+                        "in_channel": 10,
+                        "out_channel": 5,
+                        "inner_channel": 128,
+                        "channel_mults": [
+                            1,
+                            2,
+                            4// ,
+                            // 8
+                        ],
+                        "attn_res": [
+                            // 32,
+                            16
+                            // 8
+                        ],
+                        "num_head_channels": 32,
+                        "res_blocks": 2,
+                        "dropout": 0.2,
+                        "image_size": [
+                            704,
+                            32
+                        ]
+                    },
+                    "beta_schedule": {
+                        "train": {
+                            "schedule": "linear",
+                            "n_timestep": 2000,
+                            // "n_timestep": 10, // debug
+                            "linear_start": 1e-6,
+                            "linear_end": 0.01
+                        },
+                        "test": {
+                            "schedule": "linear",
+                            "n_timestep": 2000,
+                            "linear_start": 1e-6,
+                            "linear_end": 0.01
+                        }
+                    }
+                }
+            }
+        ],
+        "which_losses": [ // import designated list of losses without arguments
+            "mse_loss" // import mse_loss() function/class from default file (default is [models/losses.py]), equivalent to { "name": "mse_loss", "args":{}}
+        ],
+        "which_metrics": [ // import designated list of metrics without arguments
+            "mse" // import mae() function/class from default file (default is [models/metrics.py]), equivalent to { "name": "mae", "args":{}}
+        ]
+    },
+
+    "train": { // arguments for basic training
+        "n_epoch": 1e8, // max epochs, not limited now
+        "n_iter": 1e8, // max interations
+        "val_epoch": 10, // valdation every specified number of epochs
+        "save_checkpoint_epoch": 10,
+        "log_iter": 1e3, // log every specified number of iterations
+        "tensorboard" : false // tensorboardX enable
+    },
+    
+    "test": {
+        "n_epoch": 4
+    },
+
+    "debug": { // arguments in debug mode, which will replace arguments in train
+        "val_epoch": 1,
+        "save_checkpoint_epoch": 1,
+        "log_iter": 2,
+        "debug_split": 50 // percent or number, change the size of dataloder to debug_split.
+    }
+}

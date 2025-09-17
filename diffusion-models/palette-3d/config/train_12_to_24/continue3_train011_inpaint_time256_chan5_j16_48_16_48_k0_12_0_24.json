@@ -1,0 +1,212 @@
+{
+    "name": "ct3_011_inpaint_time256_chan5_j16_48_16_48_k0_12_0_24",
+    "wandb_project": "train256_k0_12_0_24",
+    "gpu_ids": [
+        0,
+        1,
+        2,
+        3
+    ],
+    "seed": 2,
+    "finetune_norm": false,
+    "datatype": "3d_numpy",
+    "path": {
+        "base_dir": "/scratch/orybchuk/wakedynamics/bcs-ldm/palette_3d/experiments/train256_k0_12_0_24",
+        "code": "code",
+        "tb_logger": "tb_logger",
+        "results": "results",
+        "checkpoint": "checkpoint",
+        "resume_state": "/scratch/orybchuk/wakedynamics/bcs-ldm/palette_3d/experiments/train256_k0_12_0_24/train_ct1_011_inpaint_time256_chan5_j16_48_16_48_k0_12_0_24_240708_090635/checkpoint/3600"
+    },
+    "datasets": {
+        "train": {
+            "which_dataset": {
+                "name": [
+                    "data.dataset",
+                    "InpaintLESDataset"
+                ],
+                "args": {
+                    "data_root": "/scratch/orybchuk/wakedynamics/bcs-ldm/palette_3d/datasets/072415/time256_chan5_j16_48_16_48_k0_12_0_24/flist/train_and_val.flist",
+                    "data_len": -1,
+                    "mask_config": {
+                        "mask_mode": "two_files",
+                        "jlo_in_rel": 9999,
+                        "jhi_in_rel": 9999,
+                        "klo_in_rel": 9999,
+                        "khi_in_rel": 9999,
+                        "mask_dir1": "/scratch/orybchuk/wakedynamics/bcs-ldm/palette_3d/datasets/072415/time256_chan5_j16_48_16_48_k0_12_0_24/masks/mask_cascade1.npy",
+                        "mask_dir2": "/scratch/orybchuk/wakedynamics/bcs-ldm/palette_3d/datasets/072415/time256_chan5_j16_48_16_48_k0_12_0_24/masks/mask_cascade2.npy"
+                    },
+                    "data_bounds": [
+                        -1.548590187844174,
+                        15.289255055189235,
+                        -7.417113767352469,
+                        7.407201217915894,
+                        -4.736652469267282,
+                        7.269067256524823,
+                        317.892111610958,
+                        322.2032458440987,
+                        -0.2578927003976428,
+                        3.7367529126674404
+                    ],
+                    "image_size": [
+                        256,
+                        32,
+                        24
+                    ]
+                }
+            },
+            "dataloader": {
+                "validation_split": 480,
+                "args": {
+                    "batch_size": 4,
+                    "num_workers": 4,
+                    "shuffle": true,
+                    "pin_memory": true,
+                    "drop_last": true
+                },
+                "val_args": {
+                    "batch_size": 4,
+                    "num_workers": 4,
+                    "shuffle": false,
+                    "pin_memory": true,
+                    "drop_last": false
+                }
+            }
+        },
+        "test": {
+            "which_dataset": {
+                "name": "InpaintLESDataset",
+                "args": {
+                    "data_root": "/scratch/orybchuk/wakedynamics/bcs-ldm/palette_3d/datasets/072415/time256_chan5_j16_48_16_48_k0_12_0_24/flist/test",
+                    "mask_config": {
+                        "mask_mode": "two_files",
+                        "jlo_in_rel": 9999,
+                        "jhi_in_rel": 9999,
+                        "klo_in_rel": 9999,
+                        "khi_in_rel": 9999,
+                        "mask_dir1": "/scratch/orybchuk/wakedynamics/bcs-ldm/palette_3d/datasets/072415/time600_chan5_j16_48_16_48_k0_12_0_24/masks/mask_cascade1.npy",
+                        "mask_dir2": "/scratch/orybchuk/wakedynamics/bcs-ldm/palette_3d/datasets/072415/time600_chan5_j16_48_16_48_k0_12_0_24/masks/mask_cascade2.npy"
+                    },
+                    "data_bounds": [
+                        -1.548590187844174,
+                        15.289255055189235,
+                        -7.417113767352469,
+                        7.407201217915894,
+                        -4.736652469267282,
+                        7.269067256524823,
+                        317.892111610958,
+                        322.2032458440987,
+                        -0.2578927003976428,
+                        3.7367529126674404
+                    ],
+                    "image_size": [
+                        256,
+                        32,
+                        24
+                    ]
+                }
+            },
+            "dataloader": {
+                "args": {
+                    "batch_size": 4,
+                    "num_workers": 4,
+                    "pin_memory": true
+                }
+            }
+        }
+    },
+    "model": {
+        "which_model": {
+            "name": [
+                "models.model",
+                "Palette"
+            ],
+            "args": {
+                "sample_num": 1,
+                "task": "inpainting",
+                "ema_scheduler": {
+                    "ema_start": 1,
+                    "ema_iter": 1,
+                    "ema_decay": 0.9999
+                },
+                "optimizers": [
+                    {
+                        "lr": 0.0001,
+                        "weight_decay": 0
+                    }
+                ]
+            }
+        },
+        "which_networks": [
+            {
+                "name": [
+                    "models.network",
+                    "Network"
+                ],
+                "args": {
+                    "init_type": "kaiming",
+                    "module_name": "guided_diffusion_3d",
+                    "unet": {
+                        "in_channel": 10,
+                        "out_channel": 5,
+                        "inner_channel": 96,
+                        "channel_mults": [
+                            1,
+                            2,
+                            4
+                        ],
+                        "attn_res": [
+                            16
+                        ],
+                        "num_head_channels": 32,
+                        "res_blocks": 2,
+                        "dropout": 0.2,
+                        "image_size": [
+                            256,
+                            32,
+                            24
+                        ]
+                    },
+                    "beta_schedule": {
+                        "train": {
+                            "schedule": "linear",
+                            "n_timestep": 2000,
+                            "linear_start": 1e-06,
+                            "linear_end": 0.01
+                        },
+                        "test": {
+                            "schedule": "linear",
+                            "n_timestep": 2000,
+                            "linear_start": 1e-06,
+                            "linear_end": 0.01
+                        }
+                    }
+                }
+            }
+        ],
+        "which_losses": [
+            "mse_loss"
+        ],
+        "which_metrics": [
+            "mse"
+        ]
+    },
+    "train": {
+        "n_epoch": 8000,
+        "n_iter": 100000000,
+        "val_epoch": 50,
+        "save_checkpoint_epoch": 100,
+        "log_iter": 1000,
+        "tensorboard": false
+    },
+    "test": {
+        "n_epoch": 30
+    },
+    "debug": {
+        "val_epoch": 1,
+        "save_checkpoint_epoch": 1,
+        "log_iter": 2,
+        "debug_split": 50
+    }
+}
